@@ -17,7 +17,7 @@ const userInput = {
   startYear: 2020,
   startMonth: 3,
   startDay: 9,
-  startHour: 10,
+  startHour: 9,
   startMinute: 0,
   startSecond: 0,
   endYear: 2020,
@@ -43,42 +43,55 @@ function addLeadingZero(num){
   return withZero;
 }
 
-function setStartTime(data, input) {
-  let startTime = '';
+// generic time set
+function setTime(time) {
+  let timeString = '';
+  timeString += time.year;
+  timeString += addLeadingZero(time.month);
+  timeString += addLeadingZero(time.day);
+  timeString += 'T'
+  timeString += addLeadingZero(time.hour + 10); //HST to UTC
+  timeString += addLeadingZero(time.minute);
+  timeString += addLeadingZero(time.second);
+  timeString += 'Z';
+  return timeString;
+}
 
-  startTime += input.startYear;
-  startTime += addLeadingZero(input.startMonth);
-  startTime += addLeadingZero(input.startDay);
-  startTime += 'T'
-  startTime += addLeadingZero(input.startHour + 10); //HST to UTC
-  startTime += addLeadingZero(input.startMinute);
-  startTime += addLeadingZero(input.startSecond);
-  startTime += 'Z';
-  data.DTSTART = startTime;
+function setStartTime(data, input) {
+  const startTime = {
+    year: input.startYear,
+    month: input.startMonth,
+    day: input.startDay,
+    hour: input.startHour,
+    minute: input.startMinute,
+    second: input.startSecond,
+  }
+  data.DTSTART = setTime(startTime);
 }
 
 function setEndTime(data, input) {
-
-  let endTime = '';
-  endTime += input.startYear;
-  endTime += addLeadingZero(input.endMonth);
-  endTime += addLeadingZero(input.endDay);
-  endTime += 'T';
-  endTime += addLeadingZero(input.endHour + 10); //HST to UTC
-  endTime += addLeadingZero(input.endMinute);
-  endTime += addLeadingZero(input.endSecond);
-  endTime += 'Z';
-  data.DTEND= endTime;
-
+  const endTime = {
+    year: input.endYear,
+    month: input.endMonth,
+    day: input.endDay,
+    hour: input.endHour,
+    minute: input.endMinute,
+    second: input.endSecond,
+  }
+  data.DTEND= setTime(endTime);
 }
 
+//copy location to data
 function setLocation(data, input){
   data.LOCATION = input.location;
 }
+
+//copy summary to data
 function setSummary(data, input){
   data.SUMMARY = input.summary;
 }
 
+//format the data before generating ics file
 function setData(data, input) {
   setStartTime(data, input);
   setEndTime(data, input);
@@ -86,9 +99,23 @@ function setData(data, input) {
   setSummary(data, input);
 }
 
-function  generateResult(data) {
-  let result = 'BEGIN:VCALENDAR\n' +
-      'BEGIN:VEVENT\n';
+//generate the ics file in plain text with the formatted data
+function generateResult(data) {
+
+  let result = 'BEGIN:VCALENDAR\n';
+
+  result += generateEvent(data);
+
+  result += 'END:VCALENDAR\n';
+
+  return(result);
+
+}
+
+//generate an event
+function generateEvent(data) {
+
+  let event = 'BEGIN:VEVENT\n';
 
   _.mapObject(data, (val, key) => {
     let line = '';
@@ -98,13 +125,12 @@ function  generateResult(data) {
       line = 'LAST-MODIFIED:' + val;
     }
     let lines = line.match(/.{1,75}/g);
-    _.map(lines, line => result = result + line + '\n');
+    _.map(lines, line => event = event + line + '\n');
+
   });
 
-  result += 'END:VEVENT\n' +
-      'END:VCALENDAR\n';
-
-  return(result);
+  event += 'END:VEVENT\n';
+  return event;
 }
 
 const data = makeCopy(template);
