@@ -16,21 +16,21 @@ const template = {
 //this is the form collected from the user, all the fields should be verified by use
 const userInput = {
   startYear: 2021,
-  startMonth: 2,
-  startDay: 28,
+  startMonth: 4,
+  startDay: 1,
   startHour: 10,
   startMinute: 0,
   startSecond: 0,
   endYear: 2021,
-  endMonth: 2,
-  endDay: 28,
+  endMonth: 4,
+  endDay: 1,
   endHour: 15,
   endMinute: 0,
   endSecond: 0,
   location: 'At home',
   summary: 'Play Rainbow 6 Siege',
-  recurringFrequency: 'Once',
-  recurringTimes: 5
+  recurringFrequency: 'Everyday',
+  recurringTimes: 1
 }
 
 function addLeadingZero(num){
@@ -132,13 +132,12 @@ function setSummary(data, input){
 }
 
 //return the formatted data before generating ics file
-function setData(template, input) {
-
+function generateEvents(template, input) {
   switch(input.recurringFrequency) {
     case 'Everyday':
-      return generateRecurringEvent(template, input);
+      return generateRecurringEventsEveryday(template, input);
     case 'Once':
-      return generateEvent(template, input);
+      return generateOneEvent(template, input);
     default:
       console.log("Recurring Frequency cannot be read properly.");
   }
@@ -146,11 +145,11 @@ function setData(template, input) {
 }
 
 //generate the ics file in plain text with the formatted data
-function generateResult(data) {
+function generateResult(data, input) {
 
   let result = 'BEGIN:VCALENDAR\n';
 
-  result += generateEvent(data);
+  result += generateEvents(template, input);
 
   result += 'END:VCALENDAR\n';
 
@@ -158,16 +157,21 @@ function generateResult(data) {
 
 }
 
-function generateRecurringEvent(template, input) {
-  return generateEvent(template);
+function generateRecurringEventsEveryday(template, input) {
+  let result = '';
+  for (let i = 1; i <= input.recurringTimes; i ++) {
+    input.startDay ++;
+    input.endDay ++;
+    result += generateOneEvent(template, input);
+  }
+  return result;
 }
 
 //generate an event
-function generateEvent(template, input) {
+function generateOneEvent(template, input) {
 
   let event = 'BEGIN:VEVENT\n';
   let data = template; //make a copy of the template and then modify the copy
-
   setStartTime(data, input);
   setEndTime(data, input);
   setLocation(data, input);
@@ -189,6 +193,4 @@ function generateEvent(template, input) {
   return event;
 }
 
-events = setData(template, userInput);
-
-console.log( generateResult(events) );
+console.log( generateResult(template, userInput) );
