@@ -15,15 +15,15 @@ const template = {
 
 const userInput = {
   startYear: 2020,
-  startMonth: 3,
-  startDay: 9,
-  startHour: 9,
+  startMonth: 2,
+  startDay: 29,
+  startHour: 10,
   startMinute: 0,
   startSecond: 0,
   endYear: 2020,
-  endMonth: 3,
-  endDay: 9,
-  endHour: 13,
+  endMonth: 2,
+  endDay: 29,
+  endHour: 15,
   endMinute: 0,
   endSecond: 0,
   location: 'At home',
@@ -44,18 +44,59 @@ function addLeadingZero(num){
 }
 
 // generic time set
-function setTime(time) {
+function setTime(localTime) {
+  time = localTimeToUniversalTime(-10, localTime);
   let timeString = '';
   timeString += time.year;
   timeString += addLeadingZero(time.month);
   timeString += addLeadingZero(time.day);
   timeString += 'T'
-  timeString += addLeadingZero(time.hour + 10); //HST to UTC
+  timeString += addLeadingZero(time.hour);
   timeString += addLeadingZero(time.minute);
   timeString += addLeadingZero(time.second);
   timeString += 'Z';
   return timeString;
 }
+
+function localTimeToUniversalTime(timeZone, localTime) {
+  const months1 = [1, 3, 5, 7, 8, 10];
+  const months2 = [4, 6, 9, 11];
+
+  universalTime = localTime;
+  universalTime.hour -= timeZone;
+  if (universalTime.hour > 24) {
+    universalTime.day ++;
+    universalTime.hour -= 24;
+    if (universalTime.day > 28) {
+      if (months1.includes(universalTime.month) && universalTime.day > 31) {
+        universalTime.month++;
+        universalTime.day = 1;
+      } else if (months2.includes(universalTime.month) && universalTime.day > 30) {
+        universalTime.month++;
+        universalTime.day = 1;
+      } else if (universalTime.month == 12 && universalTime.day > 31) {
+        universalTime.year++;
+        universalTime.month = 1;
+        universalTime.day = 1;
+      } else if (universalTime.month == 2 && universalTime.day > 28 && universalTime.year % 4 != 0) {
+        //common year
+        universalTime.month++;
+        universalTime.day = 1;
+      } else if (universalTime.month == 2 && universalTime.day > 29 && universalTime.year % 4 == 0) {
+        //leap year, assume year is in range 2000~2099
+        universalTime.month++;
+        universalTime.day = 1;
+      }
+    }
+  } else if (universalTime.hour < 0) {
+    // not implemented yet
+    universalTime.day --;
+    universalTime.hour += 24;
+  }
+
+  return universalTime;
+}
+
 
 function setStartTime(data, input) {
   const startTime = {
