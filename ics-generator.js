@@ -13,25 +13,24 @@ const template = {
   TRANSP: 'OPAQUE'
 }
 
+//this is the form collected from the user, all the fields should be verified by use
 const userInput = {
-  startYear: 2020,
+  startYear: 2021,
   startMonth: 2,
-  startDay: 29,
+  startDay: 28,
   startHour: 10,
   startMinute: 0,
   startSecond: 0,
-  endYear: 2020,
+  endYear: 2021,
   endMonth: 2,
-  endDay: 29,
+  endDay: 28,
   endHour: 15,
   endMinute: 0,
   endSecond: 0,
   location: 'At home',
   summary: 'Play Rainbow 6 Siege',
-}
-
-function makeCopy(temp){
-   return temp;
+  recurringFrequency: 'Once',
+  recurringTimes: 5
 }
 
 function addLeadingZero(num){
@@ -43,7 +42,7 @@ function addLeadingZero(num){
   return withZero;
 }
 
-// generic time set
+// generic time set, format the time from integer to text
 function setTime(localTime) {
   time = localTimeToUniversalTime(-10, localTime);
   let timeString = '';
@@ -83,7 +82,7 @@ function localTimeToUniversalTime(timeZone, localTime) {
         universalTime.month++;
         universalTime.day = 1;
       } else if (universalTime.month == 2 && universalTime.day > 29 && universalTime.year % 4 == 0) {
-        //leap year, assume year is in range 2000~2099
+        //leap year, assume year is in range 2001~2099
         universalTime.month++;
         universalTime.day = 1;
       }
@@ -132,12 +131,18 @@ function setSummary(data, input){
   data.SUMMARY = input.summary;
 }
 
-//format the data before generating ics file
-function setData(data, input) {
-  setStartTime(data, input);
-  setEndTime(data, input);
-  setLocation(data, input);
-  setSummary(data, input);
+//return the formatted data before generating ics file
+function setData(template, input) {
+
+  switch(input.recurringFrequency) {
+    case 'Everyday':
+      return generateRecurringEvent(template, input);
+    case 'Once':
+      return generateEvent(template, input);
+    default:
+      console.log("Recurring Frequency cannot be read properly.");
+  }
+
 }
 
 //generate the ics file in plain text with the formatted data
@@ -153,10 +158,20 @@ function generateResult(data) {
 
 }
 
+function generateRecurringEvent(template, input) {
+  return generateEvent(template);
+}
+
 //generate an event
-function generateEvent(data) {
+function generateEvent(template, input) {
 
   let event = 'BEGIN:VEVENT\n';
+  let data = template; //make a copy of the template and then modify the copy
+
+  setStartTime(data, input);
+  setEndTime(data, input);
+  setLocation(data, input);
+  setSummary(data, input);
 
   _.mapObject(data, (val, key) => {
     let line = '';
@@ -174,7 +189,6 @@ function generateEvent(data) {
   return event;
 }
 
-const data = makeCopy(template);
-setData(data, userInput);
-let result = generateResult(data);
-console.log(result);
+events = setData(template, userInput);
+
+console.log( generateResult(events) );
